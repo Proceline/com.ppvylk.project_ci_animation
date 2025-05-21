@@ -1,0 +1,16 @@
+{
+    "name": "ProjectCI_Animation_Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:0df94504ada632e4fb66e5593cc1b1c4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

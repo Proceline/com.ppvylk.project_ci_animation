@@ -1,0 +1,14 @@
+{
+    "name": "ProjectCI_Animation_Runtime",
+    "rootNamespace": "ProjectCI_Animation.Runtime",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

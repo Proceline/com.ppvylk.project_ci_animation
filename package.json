@@ -1,12 +1,12 @@
 {
-    "name": "com.ppvylk.project_ci_animation",
-    "version": "1.0.0",
-    "displayName": "Project CI Animation",
-    "description": "Including specific animation system.",
-    "unity": "6000.0",
-    "author": {
-        "name": "Proceline Congcong K",
-        "email": "wqjiujiu@gmail.com",
-        "url": "https://www.linkedin.com/in/junda-kong-1153b6148"
-    }
+  "name": "com.ppvylk.project_ci_animation",
+  "version": "1.0.1",
+  "displayName": "Project CI Animation",
+  "description": "Including specific animation system.",
+  "unity": "6000.0",
+  "author": {
+    "name": "Proceline Congcong K",
+    "email": "wqjiujiu@gmail.com",
+    "url": "https://www.linkedin.com/in/junda-kong-1153b6148"
+  }
 }

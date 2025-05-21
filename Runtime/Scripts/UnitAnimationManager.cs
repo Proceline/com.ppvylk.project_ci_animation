@@ -30,16 +30,12 @@ namespace ProjectCI_Animation.Runtime
     [RequireComponent(typeof(Animator))]
     public class UnitAnimationManager : MonoBehaviour
     {
-        public AnimationClip testAnimation;
-        public AnimationClip testAnimation2;
-        public float blendDuration = 0.5f;
+        public AnimationPlayableSupportBase animationPlayableSupport;
         
-        private PlayableGraph playableGraph;
-        private AnimationPlayableOutput playableOutput;
-        private AnimationMixerPlayable mixerPlayable;
-        private AnimationClipPlayable clipPlayable1;
-        private AnimationClipPlayable clipPlayable2;
-        private Animator animator;
+        private PlayableGraph _playableGraph;
+        private AnimationPlayableOutput _playableOutput;
+        private AnimationMixerPlayable _mixerPlayable;
+        private Animator _animator;
 
         private int _idleIndex = 0;
         private readonly Dictionary<string, AnimationParams> _clipPlayableMap = new();
@@ -48,73 +44,116 @@ namespace ProjectCI_Animation.Runtime
 
         private void Awake()
         {
-            animator = GetComponent<Animator>();
-            playableGraph = PlayableGraph.Create("UnitAnimationGraph");
-            playableGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+            _animator = GetComponent<Animator>();
+            _playableGraph = PlayableGraph.Create("UnitAnimationGraph");
+            _playableGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
 
-            // 创建两个clipPlayable
-            var clipPlayable1 = AddClipPlayable(testAnimation, 0, null);
-            var clipPlayable2 = AddClipPlayable(testAnimation2, 0.1f, new float[] { 0.5f });
-
-            // 创建mixer
-            mixerPlayable = AnimationMixerPlayable.Create(playableGraph, 2);
-            if (clipPlayable1.IsValid())
-                playableGraph.Connect(clipPlayable1, 0, mixerPlayable, 0);
-            if (clipPlayable2.IsValid())
-                playableGraph.Connect(clipPlayable2, 0, mixerPlayable, 1);
-
-            playableOutput = AnimationPlayableOutput.Create(playableGraph, "Animation", animator);
-            playableOutput.SetSourcePlayable(mixerPlayable);
-
-            playableGraph.Play();
+            _playableOutput = AnimationPlayableOutput.Create(_playableGraph, "Animation", _animator);
             
-            PlayLoopAnimation(0);
-            _idleIndex = 0;
+            AddClipPlayables(animationPlayableSupport.GetDefaultAnimationClipInfos());
+
+            if (_mixerPlayable.IsValid())
+            {
+                _playableOutput.SetSourcePlayable(_mixerPlayable);
+            }
+
+            _playableGraph.Play();
+            
+            int initIndex = animationPlayableSupport.GetAnimationIndex(AnimationIndexName.Idle);
+            PlayLoopAnimation(initIndex);
+            _idleIndex = initIndex;
         }
 
-        private async void Update()
+        public async void ForcePlayAnimation(IAnimationClipInfo clipInfo)
         {
-            // 空格只切到testAnimation2，不能切回
-            if (Input.GetKeyDown(KeyCode.Space)) //&& !isTestAnimation2Playing && !isBlending)
+            _cancelTokenSource?.Cancel();
+            _cancelTokenSource?.Dispose();
+            _cancelTokenSource = new CancellationTokenSource();
+            var clipPlayable = GetClipPlayable(clipInfo, out int index);
+            await PlayNonLoopAnimation(clipPlayable, index, 
+                clipInfo.TransitDuration, _cancelTokenSource);
+        }
+
+        public async void ForcePlayAnimation(AnimationIndexName indexName)
+        {
+            _cancelTokenSource?.Cancel();
+            _cancelTokenSource?.Dispose();
+            _cancelTokenSource = new CancellationTokenSource();
+            var clipPlayable = GetClipPlayable(indexName, out int index);
+            if (_clipPlayableMap.
+                TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
             {
-                _cancelTokenSource?.Cancel();
-                _cancelTokenSource?.Dispose();
-                _cancelTokenSource = new CancellationTokenSource();
-                var clipPlayable = GetClipPlayable(testAnimation2);
-                await PlayNonLoopAnimation(clipPlayable, 1, 0.1f, _cancelTokenSource);
+                await PlayNonLoopAnimation(clipPlayable, index, 
+                    clipParams.m_TransitDuration, _cancelTokenSource);
             }
         }
 
-        public AnimationClipPlayable GetClipPlayable(IAnimationClipInfo clipInfo)
+        public AnimationClipPlayable GetClipPlayable(IAnimationClipInfo clipInfo, out int index)
         {
             if (_clipPlayableMap.TryGetValue(clipInfo.Clip.name, out var clipParams))
             {
+                index = clipParams.m_Index;
                 return _clipPlayables[clipParams.m_Index];
             }
-            AddClipPlayable(clipInfo.Clip, clipInfo.TransitDuration, clipInfo.BreakPoints);
-            return _clipPlayables[_clipPlayableMap[clipInfo.Clip.name].m_Index];
+            AddClipPlayable(clipInfo);
+            index = _clipPlayables.Count - 1;
+            return _clipPlayables[index];
         }
 
-        public AnimationClipPlayable GetClipPlayable(AnimationClip clip, float transitDuration = 0.1f)
+        public AnimationClipPlayable GetClipPlayable(AnimationIndexName indexName, out int index)
         {
-            if (_clipPlayableMap.TryGetValue(clip.name, out var clipParams))
-            {
-                return _clipPlayables[clipParams.m_Index];
-            }
-            AddClipPlayable(clip, transitDuration, new float[] { 0.5f });
-            return _clipPlayables[_clipPlayableMap[clip.name].m_Index];
+            index = animationPlayableSupport.GetAnimationIndex(indexName);
+            return _clipPlayables[index];
         }
 
-        public AnimationClipPlayable AddClipPlayable(AnimationClip clip, float transitDuration, float[] breakPoints)
+        public AnimationClipPlayable AddClipPlayable(IAnimationClipInfo clipInfo)
         {
-            var clipPlayable = AnimationClipPlayable.Create(playableGraph, clip);
+            var clipPlayable = AnimationClipPlayable.Create(_playableGraph, clipInfo.Clip);
             int index = _clipPlayables.Count;
             _clipPlayables.Add(clipPlayable);
             
-            _clipPlayableMap.Add(clip.name, AnimationParams.Default(index, clip.isLooping, 
-                transitDuration, breakPoints));
+            _clipPlayableMap.Add(clipInfo.Clip.name, AnimationParams.Default(index, clipInfo.Clip.isLooping, 
+                clipInfo.TransitDuration, clipInfo.BreakPoints));
+
+            RebuildMixer();
+
             return clipPlayable;
         }
+
+        private void AddClipPlayables(IAnimationClipInfo[] clipInfos)
+        {
+            for (int i = 0; i < clipInfos.Length; i++)
+            {
+                var clipPlayable = AnimationClipPlayable.Create(_playableGraph, clipInfos[i].Clip);
+                _clipPlayables.Add(clipPlayable);
+
+                _clipPlayableMap.TryAdd(clipInfos[i].Clip.name, AnimationParams.Default(i, clipInfos[i].Clip.isLooping, 
+                    clipInfos[i].TransitDuration, clipInfos[i].BreakPoints));
+            }
+
+            RebuildMixer();
+        }
+
+        private void RebuildMixer()
+        {
+            if (_mixerPlayable.IsValid())
+            {
+                _mixerPlayable.Destroy();
+            }
+
+            int totalInputCount =_clipPlayables.Count;
+            _mixerPlayable = AnimationMixerPlayable.Create(_playableGraph, totalInputCount);
+
+            for (int i = 0; i < totalInputCount; i++)
+            {
+                var clipPlayable = _clipPlayables[i];
+                if (clipPlayable.IsValid())
+                    _playableGraph.Connect(clipPlayable, 0, _mixerPlayable, i);
+            }
+            
+            _playableOutput.SetSourcePlayable(_mixerPlayable);
+        }
+             
 
         private void PlayLoopAnimation(int index)
         {
@@ -166,8 +205,8 @@ namespace ProjectCI_Animation.Runtime
                     startTime += Time.deltaTime;
                     float blendWeight = transitDuration > 0 ? 
                         Mathf.Clamp01(startTime / transitDuration) : 1f;
-                    mixerPlayable.SetInputWeight(_idleIndex, blendWeight);
-                    mixerPlayable.SetInputWeight(index, 1f - blendWeight);
+                    _mixerPlayable.SetInputWeight(_idleIndex, blendWeight);
+                    _mixerPlayable.SetInputWeight(index, 1f - blendWeight);
                     if (blendWeight >= 1f)
                     {
                         break;
@@ -182,8 +221,6 @@ namespace ProjectCI_Animation.Runtime
                         return;
                     }
                 }
-                // clipPlayable.SetTime(0);
-                // clipPlayable.SetDone(false);
             }
         }
 
@@ -195,15 +232,15 @@ namespace ProjectCI_Animation.Runtime
             {
                 clipPlayable.SetDuration(clipPlayable.GetAnimationClip().length);
             }
-            mixerPlayable.SetInputWeight(_idleIndex, 0f);
-            mixerPlayable.SetInputWeight(index, 1f);
+            _mixerPlayable.SetInputWeight(_idleIndex, 0f);
+            _mixerPlayable.SetInputWeight(index, 1f);
         }
 
         private void OnDestroy()
         {
-            if (playableGraph.IsValid())
+            if (_playableGraph.IsValid())
             {
-                playableGraph.Destroy();
+                _playableGraph.Destroy();
             }
         }
     }

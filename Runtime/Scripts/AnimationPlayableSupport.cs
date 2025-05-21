@@ -7,17 +7,6 @@ namespace ProjectCI_Animation.Runtime
     public class AnimationPlayableSupport : ScriptableObject
     {
         [SerializeField] private AnimationClip[] defaultClips;
-        
-        public void SetupAnimationForObject(GameObject target, AnimationClip clip)
-        {
-            var manager = target.GetComponent<UnitAnimationManager>();
-            if (manager == null)
-            {
-                manager = target.AddComponent<UnitAnimationManager>();
-            }
-            
-            manager.PlayAnimation(clip);
-        }
 
         public void BlendAnimations(GameObject target, AnimationClip from, AnimationClip to, float duration)
         {

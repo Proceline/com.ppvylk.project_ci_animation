@@ -6,7 +6,9 @@ This is a Unity package created to demonstrate how to structure and distribute a
 
 - Modular architecture
 - Easy integration via Git URL
-- Supports Unity 2021.3 and later
+- Fully compatible with Unity 6 and later
+- Leverages new features and performance improvements introduced in Unity 6
+- Designed for future-proof development with the latest Unity ecosystem
 
 ## Installation
 

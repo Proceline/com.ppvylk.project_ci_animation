@@ -100,13 +100,33 @@ namespace ProjectCI_Animation.Runtime
             return _clipPlayables[index];
         }
 
-        public AnimationClipPlayable GetClipPlayable(AnimationIndexName indexName, out int index)
+        public float GetPresetAnimationDuration(AnimationIndexName indexName)
+        {
+            var clipPlayable = _clipPlayables[animationPlayableSupport.GetAnimationIndex(indexName)];
+            if (_clipPlayableMap.TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
+            {
+                return clipParams.m_TransitDuration;
+            }
+            return 0;
+        }
+
+        public float[] GetPresetAnimationBreakPoints(AnimationIndexName indexName)
+        {
+            var clipPlayable = _clipPlayables[animationPlayableSupport.GetAnimationIndex(indexName)];
+            if (_clipPlayableMap.TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
+            {
+                return clipParams.m_BreakPoints;
+            }
+            return new float[0];
+        }
+
+        private AnimationClipPlayable GetClipPlayable(AnimationIndexName indexName, out int index)
         {
             index = animationPlayableSupport.GetAnimationIndex(indexName);
             return _clipPlayables[index];
         }
 
-        public AnimationClipPlayable AddClipPlayable(IAnimationClipInfo clipInfo)
+        private AnimationClipPlayable AddClipPlayable(IAnimationClipInfo clipInfo)
         {
             var clipPlayable = AnimationClipPlayable.Create(_playableGraph, clipInfo.Clip);
             int index = _clipPlayables.Count;

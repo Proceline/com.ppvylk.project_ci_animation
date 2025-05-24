@@ -60,7 +60,7 @@ namespace ProjectCI_Animation.Runtime
             _playableGraph.Play();
             
             int initIndex = animationPlayableSupport.GetAnimationIndex(AnimationIndexName.Idle);
-            PlayLoopAnimation(initIndex);
+            PlayLoopAnimation(AnimationIndexName.Idle);
             _idleIndex = initIndex;
         }
 
@@ -88,7 +88,7 @@ namespace ProjectCI_Animation.Runtime
             }
         }
 
-        public AnimationClipPlayable GetClipPlayable(IAnimationClipInfo clipInfo, out int index)
+        private AnimationClipPlayable GetClipPlayable(IAnimationClipInfo clipInfo, out int index)
         {
             if (_clipPlayableMap.TryGetValue(clipInfo.Clip.name, out var clipParams))
             {
@@ -175,8 +175,9 @@ namespace ProjectCI_Animation.Runtime
         }
              
 
-        private void PlayLoopAnimation(int index)
+        public void PlayLoopAnimation(AnimationIndexName indexName)
         {
+            int index = animationPlayableSupport.GetAnimationIndex(indexName);
             if (index < _clipPlayables.Count)
             {
                 var clipPlayable = _clipPlayables[index];

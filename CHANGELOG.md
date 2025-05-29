@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.2] - 2025-05-28
+- Upgrade with Core
+
 ## [1.0.1] - 2025-05-21
 - Add UnitAnimation Manager using Playable
 - Create abstract ScriptableObject to control Playable Clips

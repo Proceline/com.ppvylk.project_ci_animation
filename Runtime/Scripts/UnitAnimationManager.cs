@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using ProjectCI_Animation.Runtime.Interface;
 using System.Threading;
 using System;
+using System.Collections;
 
 namespace ProjectCI_Animation.Runtime
 {
@@ -40,7 +41,7 @@ namespace ProjectCI_Animation.Runtime
         private int _idleIndex = 0;
         private readonly Dictionary<string, AnimationParams> _clipPlayableMap = new();
         private readonly List<AnimationClipPlayable> _clipPlayables = new();
-        private CancellationTokenSource _cancelTokenSource;
+        private Coroutine _playNonLoopAnimationCoroutine;
 
         private void Awake()
         {
@@ -64,27 +65,29 @@ namespace ProjectCI_Animation.Runtime
             _idleIndex = initIndex;
         }
 
-        public async void ForcePlayAnimation(IAnimationClipInfo clipInfo)
+        public void ForcePlayAnimation(IAnimationClipInfo clipInfo)
         {
-            _cancelTokenSource?.Cancel();
-            _cancelTokenSource?.Dispose();
-            _cancelTokenSource = new CancellationTokenSource();
+            if (_playNonLoopAnimationCoroutine != null)
+            {
+                StopCoroutine(_playNonLoopAnimationCoroutine);
+            }
             var clipPlayable = GetClipPlayable(clipInfo, out int index);
-            await PlayNonLoopAnimation(clipPlayable, index, 
-                clipInfo.TransitDuration, _cancelTokenSource);
+            _playNonLoopAnimationCoroutine = 
+                StartCoroutine(PlayNonLoopAnimation(clipPlayable, index, clipInfo.TransitDuration));
         }
 
-        public async void ForcePlayAnimation(AnimationIndexName indexName)
+        public void ForcePlayAnimation(AnimationIndexName indexName)
         {
-            _cancelTokenSource?.Cancel();
-            _cancelTokenSource?.Dispose();
-            _cancelTokenSource = new CancellationTokenSource();
+            if (_playNonLoopAnimationCoroutine != null)
+            {
+                StopCoroutine(_playNonLoopAnimationCoroutine);
+            }
             var clipPlayable = GetClipPlayable(indexName, out int index);
             if (_clipPlayableMap.
                 TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
             {
-                await PlayNonLoopAnimation(clipPlayable, index, 
-                    clipParams.m_TransitDuration, _cancelTokenSource);
+                _playNonLoopAnimationCoroutine = 
+                    StartCoroutine(PlayNonLoopAnimation(clipPlayable, index, clipParams.m_TransitDuration));
             }
         }
 
@@ -201,27 +204,18 @@ namespace ProjectCI_Animation.Runtime
             }
         }
 
-        private async Awaitable PlayNonLoopAnimation(AnimationClipPlayable clipPlayable, int index,
-            float transitDuration, CancellationTokenSource tokenSource)
+        private IEnumerator PlayNonLoopAnimation(AnimationClipPlayable clipPlayable, int index, float transitDuration)
         {
-
             if (clipPlayable.IsValid())
             {
                 PlayTargetClipPlayable(clipPlayable, index, false);
 
                 float realDuration = clipPlayable.GetAnimationClip().length - transitDuration;
 
-                try 
-                {
-                    await Awaitable.WaitForSecondsAsync(realDuration, tokenSource.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
+                yield return Awaitable.WaitForSecondsAsync(realDuration);
 
                 float startTime = 0;
-                while (startTime <= transitDuration && !tokenSource.IsCancellationRequested)
+                while (startTime <= transitDuration)
                 {
                     startTime += Time.deltaTime;
                     float blendWeight = transitDuration > 0 ? 
@@ -233,14 +227,7 @@ namespace ProjectCI_Animation.Runtime
                         break;
                     }
                     
-                    try
-                    {
-                        await Awaitable.EndOfFrameAsync(tokenSource.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return;
-                    }
+                    yield return Awaitable.EndOfFrameAsync();
                 }
             }
         }

@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.3] - 2025-06-03
+- Fixed MixPlayer didn't clean up old index
+
 ## [1.0.2] - 2025-05-28
 - Upgrade with Core
 

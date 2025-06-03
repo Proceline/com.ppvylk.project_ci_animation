@@ -6,6 +6,7 @@ using ProjectCI_Animation.Runtime.Interface;
 using System.Threading;
 using System;
 using System.Collections;
+using UnityEngine.Events;
 
 namespace ProjectCI_Animation.Runtime
 {
@@ -42,6 +43,8 @@ namespace ProjectCI_Animation.Runtime
         private readonly Dictionary<string, AnimationParams> _clipPlayableMap = new();
         private readonly List<AnimationClipPlayable> _clipPlayables = new();
         private Coroutine _playNonLoopAnimationCoroutine;
+
+        public UnityEvent<int> OnIndexModified;
 
         private void Awake()
         {
@@ -181,6 +184,11 @@ namespace ProjectCI_Animation.Runtime
         public void PlayLoopAnimation(AnimationIndexName indexName)
         {
             int index = animationPlayableSupport.GetAnimationIndex(indexName);
+            PlayLoopAnimation(index);
+        }
+
+        private void PlayLoopAnimation(int index)
+        {
             if (index < _clipPlayables.Count)
             {
                 var clipPlayable = _clipPlayables[index];
@@ -209,7 +217,6 @@ namespace ProjectCI_Animation.Runtime
             if (clipPlayable.IsValid())
             {
                 PlayTargetClipPlayable(clipPlayable, index, false);
-
                 float realDuration = clipPlayable.GetAnimationClip().length - transitDuration;
 
                 yield return Awaitable.WaitForSecondsAsync(realDuration);
@@ -226,9 +233,8 @@ namespace ProjectCI_Animation.Runtime
                     {
                         break;
                     }
-                    
-                    yield return Awaitable.EndOfFrameAsync();
                 }
+                AssignAnimationIndex(_idleIndex);
             }
         }
 
@@ -240,8 +246,18 @@ namespace ProjectCI_Animation.Runtime
             {
                 clipPlayable.SetDuration(clipPlayable.GetAnimationClip().length);
             }
-            _mixerPlayable.SetInputWeight(_idleIndex, 0f);
+            for (int i = 0; i < _mixerPlayable.GetInputCount(); i++)
+            {
+                _mixerPlayable.SetInputWeight(i, 0f);
+            }
             _mixerPlayable.SetInputWeight(index, 1f);
+
+            AssignAnimationIndex(index);
+        }
+
+        private void AssignAnimationIndex(int index)
+        {
+            OnIndexModified.Invoke(index);
         }
 
         private void OnDestroy()

@@ -47,7 +47,7 @@ namespace ProjectCI_Animation.Runtime.Editor
                 for (int i = 0; i < defaultInfosProp.arraySize; i++)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    string label = i < _animationNames.Length ? _animationNames[i] : GetNameByIndexInEditor(i);
+                    string label = i < (int)AnimationIndexName.EndMarkDontUse ? _animationNames[i] : GetNameByIndexInEditor(i);
                     var elementProp = defaultInfosProp.GetArrayElementAtIndex(i);
                     EditorGUILayout.PropertyField(elementProp, new GUIContent($"[{label}]"), true);
                     

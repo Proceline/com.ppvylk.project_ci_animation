@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ProjectCI_Animation.Runtime.Interface;
 using UnityEngine;
 
@@ -10,21 +11,25 @@ namespace ProjectCI_Animation.Runtime
         Run = 2,
         Hit = 3,
         Death = 4,
-        Defend = 5
+        Defend = 5,
+        EndMarkDontUse = 6
     }
 
     public abstract class AnimationPlayableSupportBase : ScriptableObject
     {
-        public abstract IAnimationClipInfo[] GetDefaultAnimationClipInfos();
+        protected abstract IAnimationIndexAddon AnimationIndexAddon { get; }
+        
+        internal abstract IAnimationClipInfo[] GetDefaultAnimationClipInfos();
 
-        public int GetAnimationIndex(AnimationIndexName indexName)
+        internal int GetAnimationIndex(AnimationIndexName indexName)
         {
             return (int)indexName;
         }
 
-        public IAnimationClipInfo GetAnimationClipInfo(AnimationIndexName indexName)
+        internal int GetAnimationIndex(string indexName)
         {
-            return GetDefaultAnimationClipInfos()[GetAnimationIndex(indexName)];
+            int originalIndex = AnimationIndexAddon.GetOriginalIndexByName(indexName);
+            return originalIndex + (int)AnimationIndexName.EndMarkDontUse;
         }
     }
 
@@ -33,7 +38,7 @@ namespace ProjectCI_Animation.Runtime
     {
         [SerializeField] protected T[] defaultAnimationClipInfos;
         
-        public override IAnimationClipInfo[] GetDefaultAnimationClipInfos()
+        internal override IAnimationClipInfo[] GetDefaultAnimationClipInfos()
         {
             return defaultAnimationClipInfos;
         }

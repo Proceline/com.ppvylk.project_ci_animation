@@ -2,7 +2,6 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using ProjectCI_Animation.Runtime;
 using ProjectCI_Animation.Runtime.Interface;
 
 namespace ProjectCI_Animation.Runtime.Editor
@@ -16,6 +15,11 @@ namespace ProjectCI_Animation.Runtime.Editor
         private void OnEnable()
         {
             _animationNames = Enum.GetNames(typeof(AnimationIndexName));
+        }
+
+        protected virtual string GetNameByIndexInEditor(int index)
+        {
+            return $"{index}";
         }
 
         public override void OnInspectorGUI()
@@ -43,19 +47,18 @@ namespace ProjectCI_Animation.Runtime.Editor
                 for (int i = 0; i < defaultInfosProp.arraySize; i++)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    string label = i < _animationNames.Length ? _animationNames[i] : $"{i}";
+                    string label = i < _animationNames.Length ? _animationNames[i] : GetNameByIndexInEditor(i);
                     var elementProp = defaultInfosProp.GetArrayElementAtIndex(i);
                     EditorGUILayout.PropertyField(elementProp, new GUIContent($"[{label}]"), true);
-                    // 删除按钮
+                    
                     if (GUILayout.Button("Delete", GUILayout.Width(60)))
                     {
                         defaultInfosProp.DeleteArrayElementAtIndex(i);
                         break;
                     }
                     EditorGUILayout.EndHorizontal();
-                    // 记录已分配动画名
-                    var objRef = elementProp.objectReferenceValue as IAnimationClipInfo;
-                    if (objRef != null && i < _animationNames.Length)
+                    
+                    if (elementProp.objectReferenceValue is IAnimationClipInfo && i < _animationNames.Length)
                     {
                         assignedNames.Add(_animationNames[i]);
                     }

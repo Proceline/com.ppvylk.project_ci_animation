@@ -41,7 +41,7 @@ namespace ProjectCI_Animation.Runtime
 
         private int _idleIndex = 0;
         private readonly Dictionary<string, AnimationParams> _clipPlayableMap = new();
-        private readonly List<AnimationClipPlayable> _clipPlayables = new();
+        private readonly List<AnimationClipPlayable> _clipsPlayable = new();
         private Coroutine _playNonLoopAnimationCoroutine;
 
         public UnityEvent<int> OnIndexModified;
@@ -54,7 +54,7 @@ namespace ProjectCI_Animation.Runtime
 
             _playableOutput = AnimationPlayableOutput.Create(_playableGraph, "Animation", _animator);
             
-            AddClipPlayables(animationPlayableSupport.GetDefaultAnimationClipInfos());
+            AddPlayableClips(animationPlayableSupport.GetDefaultAnimationClipInfos());
 
             if (_mixerPlayable.IsValid())
             {
@@ -80,16 +80,24 @@ namespace ProjectCI_Animation.Runtime
         }
 
         public void ForcePlayAnimation(AnimationIndexName indexName)
+            => ForcePlayAnimation(animationPlayableSupport.GetAnimationIndex(indexName));
+
+
+        public void ForcePlayAnimation(string indexName)
+            => ForcePlayAnimation(animationPlayableSupport.GetAnimationIndex(indexName));
+        
+
+        private void ForcePlayAnimation(int index)
         {
             if (_playNonLoopAnimationCoroutine != null)
             {
                 StopCoroutine(_playNonLoopAnimationCoroutine);
             }
-            var clipPlayable = GetClipPlayable(indexName, out int index);
-            if (_clipPlayableMap.
-                TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
+
+            var clipPlayable = _clipsPlayable[index];
+            if (_clipPlayableMap.TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
             {
-                _playNonLoopAnimationCoroutine = 
+                _playNonLoopAnimationCoroutine =
                     StartCoroutine(PlayNonLoopAnimation(clipPlayable, index, clipParams.m_TransitDuration));
             }
         }
@@ -99,16 +107,16 @@ namespace ProjectCI_Animation.Runtime
             if (_clipPlayableMap.TryGetValue(clipInfo.Clip.name, out var clipParams))
             {
                 index = clipParams.m_Index;
-                return _clipPlayables[clipParams.m_Index];
+                return _clipsPlayable[clipParams.m_Index];
             }
             AddClipPlayable(clipInfo);
-            index = _clipPlayables.Count - 1;
-            return _clipPlayables[index];
+            index = _clipsPlayable.Count - 1;
+            return _clipsPlayable[index];
         }
 
         public float GetPresetAnimationDuration(AnimationIndexName indexName)
         {
-            var clipPlayable = _clipPlayables[animationPlayableSupport.GetAnimationIndex(indexName)];
+            var clipPlayable = _clipsPlayable[animationPlayableSupport.GetAnimationIndex(indexName)];
             if (_clipPlayableMap.TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
             {
                 return clipParams.m_TransitDuration;
@@ -118,40 +126,43 @@ namespace ProjectCI_Animation.Runtime
 
         public float[] GetPresetAnimationBreakPoints(AnimationIndexName indexName)
         {
-            var clipPlayable = _clipPlayables[animationPlayableSupport.GetAnimationIndex(indexName)];
+            var clipPlayable = _clipsPlayable[animationPlayableSupport.GetAnimationIndex(indexName)];
+            return GetPresetAnimationBreakPoints(clipPlayable);
+        }
+
+        public float[] GetPresetAnimationBreakPoints(string indexName)
+        {
+            var clipPlayable = _clipsPlayable[animationPlayableSupport.GetAnimationIndex(indexName)];
+            return GetPresetAnimationBreakPoints(clipPlayable);
+        }
+        
+        private float[] GetPresetAnimationBreakPoints(AnimationClipPlayable clipPlayable)
+        {
             if (_clipPlayableMap.TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
             {
                 return clipParams.m_BreakPoints;
             }
-            return new float[0];
+            return Array.Empty<float>();
         }
 
-        private AnimationClipPlayable GetClipPlayable(AnimationIndexName indexName, out int index)
-        {
-            index = animationPlayableSupport.GetAnimationIndex(indexName);
-            return _clipPlayables[index];
-        }
-
-        private AnimationClipPlayable AddClipPlayable(IAnimationClipInfo clipInfo)
+        private void AddClipPlayable(IAnimationClipInfo clipInfo)
         {
             var clipPlayable = AnimationClipPlayable.Create(_playableGraph, clipInfo.Clip);
-            int index = _clipPlayables.Count;
-            _clipPlayables.Add(clipPlayable);
+            int index = _clipsPlayable.Count;
+            _clipsPlayable.Add(clipPlayable);
             
             _clipPlayableMap.Add(clipInfo.Clip.name, AnimationParams.Default(index, clipInfo.Clip.isLooping, 
                 clipInfo.TransitDuration, clipInfo.BreakPoints));
 
             RebuildMixer();
-
-            return clipPlayable;
         }
 
-        private void AddClipPlayables(IAnimationClipInfo[] clipInfos)
+        private void AddPlayableClips(IAnimationClipInfo[] clipInfos)
         {
             for (int i = 0; i < clipInfos.Length; i++)
             {
                 var clipPlayable = AnimationClipPlayable.Create(_playableGraph, clipInfos[i].Clip);
-                _clipPlayables.Add(clipPlayable);
+                _clipsPlayable.Add(clipPlayable);
 
                 _clipPlayableMap.TryAdd(clipInfos[i].Clip.name, AnimationParams.Default(i, clipInfos[i].Clip.isLooping, 
                     clipInfos[i].TransitDuration, clipInfos[i].BreakPoints));
@@ -167,12 +178,12 @@ namespace ProjectCI_Animation.Runtime
                 _mixerPlayable.Destroy();
             }
 
-            int totalInputCount =_clipPlayables.Count;
+            int totalInputCount =_clipsPlayable.Count;
             _mixerPlayable = AnimationMixerPlayable.Create(_playableGraph, totalInputCount);
 
             for (int i = 0; i < totalInputCount; i++)
             {
-                var clipPlayable = _clipPlayables[i];
+                var clipPlayable = _clipsPlayable[i];
                 if (clipPlayable.IsValid())
                     _playableGraph.Connect(clipPlayable, 0, _mixerPlayable, i);
             }
@@ -189,9 +200,9 @@ namespace ProjectCI_Animation.Runtime
 
         private void PlayLoopAnimation(int index)
         {
-            if (index < _clipPlayables.Count)
+            if (index < _clipsPlayable.Count)
             {
-                var clipPlayable = _clipPlayables[index];
+                var clipPlayable = _clipsPlayable[index];
                 var clipName = clipPlayable.GetAnimationClip().name;
                 if (_clipPlayableMap.TryGetValue(clipName, out var clipParams))
                 {

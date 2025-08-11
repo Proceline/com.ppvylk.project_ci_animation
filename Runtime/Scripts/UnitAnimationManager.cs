@@ -3,7 +3,6 @@ using UnityEngine.Playables;
 using UnityEngine.Animations;
 using System.Collections.Generic;
 using ProjectCI_Animation.Runtime.Interface;
-using System.Threading;
 using System;
 using System.Collections;
 using UnityEngine.Events;

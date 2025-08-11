@@ -123,6 +123,16 @@ namespace ProjectCI_Animation.Runtime
             }
             return 0;
         }
+        
+        public float GetPresetAnimationDuration(string indexName)
+        {
+            var clipPlayable = _clipsPlayable[animationPlayableSupport.GetAnimationIndex(indexName)];
+            if (_clipPlayableMap.TryGetValue(clipPlayable.GetAnimationClip().name, out var clipParams))
+            {
+                return clipParams.m_TransitDuration;
+            }
+            return 0;
+        }
 
         public float[] GetPresetAnimationBreakPoints(AnimationIndexName indexName)
         {

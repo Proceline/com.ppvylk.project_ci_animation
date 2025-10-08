@@ -223,7 +223,7 @@ namespace ProjectCI_Animation.Runtime
             PlayLoopAnimation(index);
         }
 
-        private void PlayLoopAnimation(int index)
+        protected void PlayLoopAnimation(int index)
         {
             if (index < _clipsPlayable.Count)
             {

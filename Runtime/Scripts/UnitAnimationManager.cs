@@ -34,6 +34,7 @@ namespace ProjectCI_Animation.Runtime
         public AnimationPlayableSupportBase animationPlayableSupport;
 
         [NonSerialized] private AnimationPlayableSupportBase _currentPlayableSupport;
+        protected AnimationPlayableSupportBase CurrentPlayableSupport => _currentPlayableSupport;
         
         private PlayableGraph _playableGraph;
         private AnimationPlayableOutput _playableOutput;
@@ -113,14 +114,7 @@ namespace ProjectCI_Animation.Runtime
             }
         }
         
-        public void ForceStayOnAnimation(AnimationIndexName indexName)
-            => ForceStayOnAnimation(_currentPlayableSupport.GetAnimationIndex(indexName));
-
-
-        public void ForceStayOnAnimation(string indexName)
-            => ForceStayOnAnimation(_currentPlayableSupport.GetAnimationIndex(indexName));
-        
-        private void ForceStayOnAnimation(int index)
+        protected void ForceStayOnAnimation(int index)
         {
             var clipPlayable = _clipsPlayable[index];
             if (clipPlayable.IsValid())

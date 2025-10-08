@@ -26,7 +26,12 @@ namespace ProjectCI_Animation.Runtime
             return (int)indexName;
         }
 
-        internal int GetAnimationIndex(string indexName)
+        /// <summary>
+        /// Grab the animation index for NON-AnimationIndexName
+        /// </summary>
+        /// <param name="indexName">other ENUM name</param>
+        /// <returns></returns>
+        protected internal int GetAnimationIndex(string indexName)
         {
             int originalIndex = AnimationIndexAddon.GetOriginalIndexByName(indexName);
             return originalIndex + (int)AnimationIndexName.EndMarkDontUse;

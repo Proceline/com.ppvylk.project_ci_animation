@@ -112,6 +112,22 @@ namespace ProjectCI_Animation.Runtime
                     StartCoroutine(PlayNonLoopAnimation(clipPlayable, index, clipParams.TransitDuration));
             }
         }
+        
+        public void ForceStayOnAnimation(AnimationIndexName indexName)
+            => ForceStayOnAnimation(_currentPlayableSupport.GetAnimationIndex(indexName));
+
+
+        public void ForceStayOnAnimation(string indexName)
+            => ForceStayOnAnimation(_currentPlayableSupport.GetAnimationIndex(indexName));
+        
+        private void ForceStayOnAnimation(int index)
+        {
+            var clipPlayable = _clipsPlayable[index];
+            if (clipPlayable.IsValid())
+            {
+                PlayTargetClipPlayable(clipPlayable, index, false);
+            }
+        }
 
         private AnimationClipPlayable GetClipPlayable(IAnimationClipInfo clipInfo, out int index)
         {

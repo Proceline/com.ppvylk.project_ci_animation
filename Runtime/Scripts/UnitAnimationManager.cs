@@ -91,11 +91,11 @@ namespace ProjectCI_Animation.Runtime
                 StartCoroutine(PlayNonLoopAnimation(clipPlayable, index, clipInfo.TransitDuration));
         }
 
-        public void ForcePlayAnimation(AnimationIndexName indexName)
+        public virtual void ForcePlayAnimation(AnimationIndexName indexName)
             => ForcePlayAnimation(_currentPlayableSupport.GetAnimationIndex(indexName));
 
 
-        public void ForcePlayAnimation(string indexName)
+        public virtual void ForcePlayAnimation(string indexName)
             => ForcePlayAnimation(_currentPlayableSupport.GetAnimationIndex(indexName));
         
 

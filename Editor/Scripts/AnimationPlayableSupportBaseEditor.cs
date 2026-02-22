@@ -4,10 +4,10 @@ using System;
 using System.Collections.Generic;
 using ProjectCI_Animation.Runtime.Interface;
 
-namespace ProjectCI_Animation.Runtime.Editor
+namespace ProjectCI_Animation.Runtime.IEditor
 {
     [CustomEditor(typeof(AnimationPlayableSupportBase<>), true)]
-    public class AnimationPlayableSupportBaseEditor : UnityEditor.Editor
+    public class AnimationPlayableSupportBaseEditor : Editor
     {
         private string[] _animationNames;
         private UnityEngine.Object _newClipInfo;

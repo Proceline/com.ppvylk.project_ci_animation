@@ -12,16 +12,14 @@ namespace ProjectCI_Animation.Runtime
     internal struct AnimationParams
     {
         public int AnimIndex;
-        public bool IsLoop;
         public float TransitDuration;
         public float[] BreakPoints;
 
-        public static AnimationParams Default(int index, bool isLoop, float transitDuration, float[] breakPoints)
+        public static AnimationParams Default(int index, float transitDuration, float[] breakPoints)
         {
             return new AnimationParams()
             {
                 AnimIndex = index,
-                IsLoop = isLoop,
                 TransitDuration = transitDuration,
                 BreakPoints = breakPoints
             };
@@ -176,9 +174,7 @@ namespace ProjectCI_Animation.Runtime
             int index = _clipsPlayable.Count;
             _clipsPlayable.Add(clipPlayable);
             
-            _clipPlayableMap.Add(clipInfo.Clip.name, AnimationParams.Default(index, clipInfo.Clip.isLooping, 
-                clipInfo.TransitDuration, clipInfo.BreakPoints));
-
+            _clipPlayableMap.Add(clipInfo.Clip.name, AnimationParams.Default(index, clipInfo.TransitDuration, clipInfo.BreakPoints));
             RebuildMixer();
         }
 
@@ -189,8 +185,7 @@ namespace ProjectCI_Animation.Runtime
                 var clipPlayable = AnimationClipPlayable.Create(_playableGraph, clipInfos[i].Clip);
                 _clipsPlayable.Add(clipPlayable);
 
-                _clipPlayableMap.TryAdd(clipInfos[i].Clip.name, AnimationParams.Default(i, clipInfos[i].Clip.isLooping, 
-                    clipInfos[i].TransitDuration, clipInfos[i].BreakPoints));
+                _clipPlayableMap.TryAdd(clipInfos[i].Clip.name, AnimationParams.Default(i, clipInfos[i].TransitDuration, clipInfos[i].BreakPoints));
             }
 
             RebuildMixer();
@@ -231,14 +226,14 @@ namespace ProjectCI_Animation.Runtime
                 var clipName = clipPlayable.GetAnimationClip().name;
                 if (_clipPlayableMap.TryGetValue(clipName, out var clipParams))
                 {
-                    if (clipPlayable.IsValid()) //clipParams.IsLoop && 
+                    if (clipPlayable.IsValid())
                     {
                         PlayTargetClipPlayable(clipPlayable, index, true);
                         _idleIndex = index;
                     }
                     else
                     {
-                        Debug.LogError($"Animation {clipName} is not loopable");
+                        Debug.LogError($"Animation {clipName} is not valid");
                     }
                 }
                 else

@@ -231,7 +231,7 @@ namespace ProjectCI_Animation.Runtime
                 var clipName = clipPlayable.GetAnimationClip().name;
                 if (_clipPlayableMap.TryGetValue(clipName, out var clipParams))
                 {
-                    if (clipParams.IsLoop && clipPlayable.IsValid())
+                    if (clipPlayable.IsValid()) //clipParams.IsLoop && 
                     {
                         PlayTargetClipPlayable(clipPlayable, index, true);
                         _idleIndex = index;
